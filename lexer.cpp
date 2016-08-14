@@ -22,10 +22,54 @@ double numVal; // name of recognized number
 
 int getToken()
 {
-  int lastChar = ' ';
+  static char lastChar = ' ';
 
   // omit space, tab, newline, cr, etc.
   while (std::isspace(lastChar)) {
     sourceFile >> std::noskipws >> lastChar;
   }
+
+  // meet an alpha-numeric
+  if (std::isalpha(lastChar)) {
+    identifierStr = lastChar;
+    do {
+      sourceFile >> std::noskipws >> lastChar;
+      if (std::isalnum(lastChar)) identifierStr += lastChar;
+      else break;
+    }
+    while (true);
+
+    return (identifierStr == "def") ? token_def :
+                                      ((identifierStr == "extern") ?
+                                         token_extern : token_identifier);
+  }
+
+  // meen a digit or '.'
+  std::string numStr("");
+  while (std::isdigit(lastChar) || lastChar == '.') {
+    numStr += lastChar;
+    sourceFile >> std::noskipws >> lastChar;
+  }
+  if (numStr != "") {
+    numVal = std::stod(numStr);
+    return token_number;
+  }
+
+  // meet a comment
+  if (lastChar == '#') {
+    do {
+      auto nextChar = sourceFile.peek();
+      if (nextChar == std::ifstream::traits_type::eof()) {
+        return token_eof;
+      }
+      else {
+        sourceFile >> std::noskipws >> lastChar;
+      }
+    }
+    while (lastChar != '\n' && lastChar != '\r');
+  }
+
+  auto thisChar = lastChar;
+  sourceFile >> std::noskipws >> lastChar;
+  return thisChar;
 }
